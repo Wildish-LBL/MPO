@@ -1,14 +1,17 @@
 #!/bin/sh -e
 
 # Edit the following to change the name of the database user that will be created:
-APP_DB_USER=mpo_user
-APP_DB_PASS='7GVvPHzx5iMnXgw'
+PGUSER=mpo_user
+# PGPASS='7GVvPHzx5iMnXgw'
+PGPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
 
 # Edit the following to change the name of the database that is created (defaults to the user name)
-APP_DB_NAME=mpo_nersc
+PGDATABASE=mpo_nersc
+PGHOST=localhost
 
-APP_DB_PORT=15432
-APP_DB_HOST=localhost
+# N.B. These must match the ports declared in the networking portion of the Vagrantfile!
+PGPORT=5432
+PGPORT_FORWARDED=15432
 # Edit the following to change the version of PostgreSQL that is installed
 PG_VERSION=9.5
 
@@ -16,12 +19,12 @@ PG_VERSION=9.5
 # Changes below this line are probably not necessary
 ###########################################################
 print_db_usage () {
-  echo "Your PostgreSQL database has been setup and can be accessed on your local machine on the forwarded port (default: $APP_DB_PORT)"
-  echo "  Host: $APP_DB_HOST"
-  echo "  Port: $APP_DB_PORT"
-  echo "  Database: $APP_DB_NAME"
-  echo "  Username: $APP_DB_USER"
-  echo "  Password: $APP_DB_PASS"
+  echo "Your PostgreSQL database has been setup and can be accessed on your local machine on the forwarded port (default: $PGPORT)"
+  echo "  Host: $PGHOST"
+  echo "  Port: $PGPORT"
+  echo "  Database: $PGDATABASE"
+  echo "  Username: $PGUSER"
+  echo "  Password: $PGPASS"
   echo ""
   echo "Admin access to postgres user via VM:"
   echo "  vagrant ssh"
@@ -30,13 +33,13 @@ print_db_usage () {
   echo "psql access to app database user via VM:"
   echo "  vagrant ssh"
   echo "  sudo su - postgres"
-  echo "  PGUSER=$APP_DB_USER PGPASSWORD=$APP_DB_PASS psql -h $APP_DB_HOST $APP_DB_NAME"
+  echo "  PGUSER=$PGUSER PGPASSWORD=$PGPASS psql -h $PGHOST $PGDATABASE"
   echo ""
   echo "Env variable for application development:"
-  echo "  DATABASE_URL=postgresql://$APP_DB_USER:$APP_DB_PASS@$APP_DB_HOST:$APP_DB_PORT/$APP_DB_NAME"
+  echo "  DATABASE_URL=postgresql://$PGUSER:$PGPASS@$PGHOST:$PGPORT_FORWARDED/$PGDATABASE"
   echo ""
   echo "Local command to access the database via psql:"
-  echo "  PGUSER=$APP_DB_USER PGPASSWORD=$APP_DB_PASS psql -h $APP_DB_HOST -p $APP_DB_PORT $APP_DB_NAME"
+  echo "  PGUSER=$PGUSER PGPASSWORD=$PGPASS psql -h $PGHOST -p $PGPORT $PGDATABASE"
 }
 
 export DEBIAN_FRONTEND=noninteractive
@@ -84,11 +87,12 @@ echo "client_encoding = utf8" >> "$PG_CONF"
 service postgresql restart
 
 cat << EOF | su - postgres -c psql
--- Create the database user:
-CREATE USER $APP_DB_USER WITH PASSWORD '$APP_DB_PASS';
+-- Create the database users:
+CREATE USER $PGUSER  WITH PASSWORD '$PGPASS';
+CREATE USER mpoadmin WITH PASSWORD '$PGPASS';
 
 -- Create the database:
-CREATE DATABASE $APP_DB_NAME WITH OWNER=$APP_DB_USER
+CREATE DATABASE $PGDATABASE WITH OWNER=mpoadmin
                                   LC_COLLATE='en_US.utf8'
                                   LC_CTYPE='en_US.utf8'
                                   ENCODING='UTF8'
@@ -98,9 +102,24 @@ EOF
 # Tag the provision time:
 date > "$PROVISIONED_ON"
 
-echo "${APP_DB_HOST}:${APP_DB_PORT}:${APP_DB_NAME}:${APP_DB_USER}:${APP_DB_PORT}" > ~vagrant/.pgpass
+# Now set up the vagrant account to have access to this database
+(
+  echo "${PGHOST}:${PGPORT}:${PGDATABASE}:${PGUSER}:${PGPASS}"
+  echo "${PGHOST}:${PGPORT}:${PGDATABASE}:mpoadmin:${PGPASS}"
+) | tee ~vagrant/.pgpass >/dev/null
 chmod 0600 ~vagrant/.pgpass
-chown vagrant:vagrant ~vagrant.pgpass
+chown vagrant:vagrant ~vagrant/.pgpass
+usermod -a -G postgres vagrant
+(
+  echo " "
+  echo "# Setting up for PostgreSQL"
+  echo "export PGUSER=$PGUSER"
+  echo "export PGHOST=$PGHOST"
+  echo "export PGPORT=$PGPORT"
+  echo "export PGDATABASE=$PGDATABASE"
+  echo "export PATH=\${PATH}:/usr/lib/postgresql/$PG_VERSION/bin"
+  echo "export MPO_HOME=/vagrant"
+) >> ~vagrant/.profile
 
 echo "Successfully created PostgreSQL dev virtual machine."
 echo ""
