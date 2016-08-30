@@ -2,8 +2,9 @@
 
 drop database if exists mpodbdev; */
 
-drop role if exists mpoadmin;
-create user mpoadmin with password 'mpo2013';
+-- we assume the mpoadmin user exists already
+-- drop role if exists mpoadmin;
+-- create user mpoadmin with password 'mpo2013';
 
 /* create database mpodbdev OWNER mpoadmin; */
 
