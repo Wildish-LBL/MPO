@@ -20,6 +20,10 @@ Vagrant::Config.run do |config|
   config.vm.provision :shell, :path => "Vagrant-setup/bootstrap.sh"
   
   # PostgreSQL Server port forwarding
-  # N.B. This must match the $APP_DB_PORT* variables in Vagrant-setup/bootstrap.sh!
+  # N.B. This must match the $PGPORT* variables in Vagrant-setup/bootstrap.sh!
   config.vm.forward_port 5432, 15432
+  # and this must match the $APP_API_PORT in the same file.
+  config.vm.forward_port 8443, 8443
+  # and this for the web-server
+  config.vm.forward_port 9443, 9443
 end

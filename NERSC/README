@@ -13,27 +13,29 @@ vagrant up
 # variables defined in your ~/.profile by the bootstrap, you should be able to just:
 psql
 
-# You should find MPO_HOME defined in your ~vagrant/.profile
+# Once in the VM, you should find MPO_HOME defined in your ~vagrant/.profile
 cd $MPO_HOME
-# create the DB schema.
+# create the DB schema, grant access to the tables
 psql --username mpoadmin -a -f $MPO_HOME/db/create_tables.sql 
+$MPO_HOME/db/grant_auth.sh
 
 # TBD: does this still work?
 ## Start up all services
 
 #set host for client and other env variables
 #cd to mpo working directory
-export MPO_HOME=$PWD
 export MPO_VERSION=v0
 export MPO_HOST=https://localhost:8443
 export MPO=$MPO_HOME/client/python/mpo_arg.py
 alias mpo=$MPO #if you like
 export MPO_AUTH='~/Desktop/keyStore.pem' #p12 support to be added. requires autogeneration of pem file
 #or
-export MPO_AUTH=$MPO_HOME/'MPO Demo User.pem' #to use cert that comes with mpo
+export MPO_AUTH="$MPO_HOME/MPO Demo User.pem" #to use cert that comes with mpo
 export MPO_RC='path to optional resources file' # not implemented
 
-./api_server.sh&
+# N.B. Picking up the password from an unconventional place!
+export DATABASE_URL=postgresql://$PGUSER:`cat ~/.pgp-app-password`@$PGHOST:$PGPORT/$PGDATABASE
+./api_server.sh $APP_API_PORT $DATABASE_URL &
 ./web_server.sh &
 
 # pre wsgi 

@@ -22,10 +22,9 @@ create table mpousers
   dn text,
   creation_time timestamp
 );
-/*insert into mpousers values ('romosan','bc789de3-7484-49dc-a498-3b5a3aad3c80', 'Alexander', 'Romosan', 'romosan@opteron05@lbl.gov','LBL','555-555-1234','xxx' );*/
-/*insert into mpousers values ('mdsadmin', 'a8bc7b5a-b4f5-49ec-87fb-20e5bddfa1af'); */
-insert into mpousers (username,uuid,creation_time) values ('mpoadmin', 'ddc315a1-6310-41e7-a84d-886bc904f3b2',now());
-insert into mpousers (username,uuid,firstname,lastname,email,organization,dn,creation_time) values ('mpodemo', 'f223db41-d1c5-41db-b8af-fde6c0a16f76', 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', 'emailAddress=jas@psfc.mit.edu,CN=MPO Demo User,OU=PSFC,O=c21f969b5f03d33d43e04f8f136e7682,O=MIT,L=Cambridge,ST=Massachusetts,C=US',now());
+insert into mpousers (username,uuid,creation_time) values ('mpoadmin', uuid_generate_v4(), now());
+insert into mpousers (username,uuid,firstname,lastname,email,organization,dn,creation_time) values ('mpodemo', uuid_generate_v4(), 'MPO', 'Demo User', 'jas@psfc.mit.edu', 'MIT', '/C=US/ST=Massachusetts/L=Cambridge/O=MIT/O=c21f969b5f03d33d43e04f8f136e7682/OU=PSFC/CN=MPO Demo User/emailAddress=jas@psfc.mit.edu', now() );
+insert into mpousers (username,uuid,firstname,lastname,email,organization,creation_time) values ('Tony', uuid_generate_v4(), 'Tony', 'Wildish', 'wildish@lbl.gov', 'NERSC',now());
 alter table mpousers OWNER TO mpoadmin;
 
 drop table if exists mpoauth cascade;
@@ -35,8 +34,8 @@ create table mpoauth
   read boolean,
   write boolean
 );
-insert into mpoauth (u_guid, read, write) values ('bc789de3-7484-49dc-a498-3b5a3aad3c80', true, true);
-insert into mpoauth (u_guid, read, write) values ('f223db41-d1c5-41db-b8af-fde6c0a16f76', true, true);
+insert into mpoauth (u_guid, read, write) select uuid, true, true from mpousers where uuid not in ( select u_guid from mpoauth);
+
 alter table mpoauth OWNER TO mpoadmin;
 
 drop table if exists collection cascade;

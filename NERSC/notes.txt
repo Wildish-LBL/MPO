@@ -1,0 +1,48 @@
+   Host: localhost
+   Port: 15432
+   Database: mpo_nersc
+   Username: mpo_user
+   Password: 7GVvPHzx5iMnXgw
+
+ Admin access to postgres user via VM:
+   vagrant ssh
+   sudo su - postgres
+
+ psql access to app database user via VM:
+   vagrant ssh
+   sudo su - postgres
+   PGUSER=mpo_user PGPASSWORD='7GVvPHzx5iMnXgw' psql -h localhost mpo_nersc
+
+ Env variable for application development:
+   DATABASE_URL=postgresql://mpo_nersc:7GVvPHzx5iMnXgw@localhost:15432/mpo_nersc
+
+ Local command to access the database via psql:
+   PGUSER=mpo_user PGPASSWORD='7GVvPHzx5iMnXgw' psql -h localhost -p 15432 mpo_nersc
+
+export PGUSER=mpo_user
+export PGPASSWORD='7GVvPHzx5iMnXgw'
+export PGAPP=mpo_nersc
+export PGHOST=localhost
+export PGPORT=5432
+DATABASE_URL=postgresql://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGAPP
+
+Box maintenance:
+vagrant box update
+apt-get autoremove
+
+PGSQL notes:
+\h # SQL help
+\? PGSQL help
+\list # list databases
+\connect <database>
+\dt # list tables in current database
+\dS # list tables, views, sequences
+\dtS, \dvS, \dsS # tables, views, sequences in all databases
+
+SELECT datname FROM pg_database WHERE datistemplate = false;
+
+SELECT table_schema,table_name FROM information_schema.tables ORDER BY table_schema,table_name;
+
+#----------------------------------------------
+MPO install
+need package postgres-xc

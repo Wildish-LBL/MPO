@@ -636,7 +636,8 @@ def checkAccess(dn, read=False, write=False):
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor(cursor_factory=psyext.RealDictCursor)
-
+#TW
+    print("select b.read,b.write from mpousers a, mpoauth b where a.dn=%s and a.uuid=b.u_guid",(dn,))
     cursor.execute("select b.read,b.write from mpousers a, mpoauth b where a.dn=%s and a.uuid=b.u_guid",(dn,))
     records = cursor.fetchone()
 
